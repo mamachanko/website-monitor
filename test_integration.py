@@ -1,21 +1,10 @@
-import datetime
-import json
-import os
-
 import kafka
 import psycopg2
 import psycopg2.extras
-import requests
 
-
-def require_env(env_name):
-    env_value = os.environ.get(env_name)
-    if not env_value:
-        raise Exception("$%s is not set" % env_name)
-    return env_value
-
-
-URL = require_env("WM_URL")
+from website_monitor import probe_and_publish
+from website_monitor.env import require_env
+from website_monitor.url_probe import UrlProbeResult
 
 STREAM_TOPIC = require_env("WM_STREAM_TOPIC")
 STREAM_BOOTSTRAP_SERVERS = require_env("WM_STREAM_BOOTSTRAP_SERVERS")
@@ -36,76 +25,19 @@ DB_CONNECTION_STRING = require_env("WM_DB_CONNECTION_STRING")
 # then (eventually) there will be results written to the database
 # -- ~ --
 
-# TODO make it a namedtuple
-class UrlProbeResult:
-    def __init__(self, url, timestamp, http_status_code, response_time_ms):
-        self.response_time_ms = response_time_ms
-        self.http_status_code = http_status_code
-        self.timestamp = timestamp
-        self.url = url
-
-    def __str__(self) -> str:
-        return json.dumps({
-            "url": self.url,
-            "timestamp": self.timestamp,
-            "http_status_code": self.http_status_code,
-            "response_time_ms": self.response_time_ms
-        })
-
-    @staticmethod
-    def from_json(data):
-        url_probe_result = json.loads(data)
-        return UrlProbeResult(
-            url=url_probe_result["url"],
-            timestamp=url_probe_result["timestamp"],
-            http_status_code=url_probe_result["http_status_code"],
-            response_time_ms=url_probe_result["response_time_ms"],
-        )
-
 
 def test_integration():
-    print(os.environ)
-
     setup_db()
     assert_db_contains_exactly_messages([])
 
-    url_probe_result = probe_url(URL)
-    publish_url_probe_result(url_probe_result)
-
-    url_probe_result = probe_url(URL)
-    publish_url_probe_result(url_probe_result)
+    probe_and_publish.main()
+    probe_and_publish.main()
 
     messages = consume_url_probe_results()
     store(messages)
 
     assert len(retrieve()) == 2
     # assert_db_contains_exactly_messages([message])
-
-
-def probe_url(url):
-    now = datetime.datetime.utcnow()
-    response = requests.get(url, timeout=5000)
-    return UrlProbeResult(
-        url=url,
-        timestamp=str(now),
-        http_status_code=response.status_code,
-        response_time_ms=int(response.elapsed.microseconds / 1000)
-    )
-
-
-def publish_url_probe_result(url_probe_result):
-    producer = kafka.KafkaProducer(
-        bootstrap_servers=STREAM_BOOTSTRAP_SERVERS,
-        security_protocol="SSL",
-        ssl_cafile=STREAM_SSL_CA_FILE,
-        ssl_certfile=STREAM_SSL_CERT_FILE,
-        ssl_keyfile=STREAM_SSL_KEY_FILE,
-    )
-
-    producer.send(STREAM_TOPIC, str(url_probe_result).encode("utf-8"))
-
-    producer.flush()
-    producer.close()
 
 
 def consume_url_probe_results():
