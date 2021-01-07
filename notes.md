@@ -32,6 +32,7 @@
      * https://help.aiven.io/en/articles/489572-getting-started-with-aiven-kafka
 
 ## TODOs
+[ ] clean git history
 [ ] separate requirements files
 [ ]Aiven CLI to provision
  * Kafka instance

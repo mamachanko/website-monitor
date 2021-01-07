@@ -22,18 +22,44 @@ DB_CONNECTION_STRING = "postgres://avnadmin:xhy2rtzbyrk14cit@35.198.110.182:2672
 # then (eventually) there will be results written to the database
 # -- ~ --
 
+# TODO make it a namedtuple
+class UrlProbeResult:
+    def __init__(self, url, timestamp, http_status_code, response_time_ms):
+        self.response_time_ms = response_time_ms
+        self.http_status_code = http_status_code
+        self.timestamp = timestamp
+        self.url = url
+
+    def __str__(self) -> str:
+        return json.dumps({
+            "url": self.url,
+            "timestamp": self.timestamp,
+            "http_status_code": self.http_status_code,
+            "response_time_ms": self.response_time_ms
+        })
+
+    @staticmethod
+    def from_json(data):
+        url_probe_result = json.loads(data)
+        return UrlProbeResult(
+            url=url_probe_result["url"],
+            timestamp=url_probe_result["timestamp"],
+            http_status_code=url_probe_result["http_status_code"],
+            response_time_ms=url_probe_result["response_time_ms"],
+        )
+
 
 def test_integration():
     setup_db()
     assert_db_contains_exactly_messages([])
 
     url_probe_result = probe_url("https://httpbin.org/status/200")
-    publish(json.dumps(url_probe_result))
+    publish_url_probe_result(url_probe_result)
 
     url_probe_result = probe_url("https://httpbin.org/status/400")
-    publish(json.dumps(url_probe_result))
+    publish_url_probe_result(url_probe_result)
 
-    messages = consume()
+    messages = consume_url_probe_results()
     store(messages)
 
     assert len(retrieve()) == 2
@@ -43,15 +69,15 @@ def test_integration():
 def probe_url(url):
     now = datetime.datetime.utcnow()
     response = requests.get(url, timeout=5000)
-    return {
-        "timestamp": str(now),
-        "http_status_code": response.status_code,
-        "url": url,
-        "response_time_ms": int(response.elapsed.microseconds / 1000)
-    }
+    return UrlProbeResult(
+        url=url,
+        timestamp=str(now),
+        http_status_code=response.status_code,
+        response_time_ms=int(response.elapsed.microseconds / 1000)
+    )
 
 
-def publish(message):
+def publish_url_probe_result(message):
     producer = kafka.KafkaProducer(
         bootstrap_servers="stream-sugardubz-dc85.aivencloud.com:26730",
         security_protocol="SSL",
@@ -65,14 +91,14 @@ def publish(message):
             record_metadata.topic, record_metadata.partition, record_metadata.offset))
 
     print("publishing ...")
-    producer.send(STREAM_TOPIC, message.encode("utf-8")).add_callback(on_send_success)
+    producer.send(STREAM_TOPIC, str(message).encode("utf-8")).add_callback(on_send_success)
 
     producer.flush()
     producer.close()
     print("done.")
 
 
-def consume():
+def consume_url_probe_results():
     consumer = kafka.KafkaConsumer(
         STREAM_TOPIC,
         group_id="my-group",
@@ -92,7 +118,7 @@ def consume():
         for _, ms in consumer.poll(timeout_ms=1000).items():
             for message in ms:
                 print("Received: {}".format(message.value))
-                messages.append(json.loads(message.value.decode("utf-8")))
+                messages.append(UrlProbeResult.from_json(message.value.decode("utf-8")))
 
     consumer.commit()
     consumer.close()
@@ -102,66 +128,47 @@ def consume():
 
 
 def store(url_probe_results):
-    db_connection = psycopg2.connect(DB_CONNECTION_STRING)
-    db_cursor = db_connection.cursor()
-    psycopg2.extras.execute_values(
-        db_cursor,
-        "insert into url_probes(url, timestamp, http_status_code, response_time_ms) values %s",
-        [(r["url"], r["timestamp"], r["http_status_code"], r["response_time_ms"]) for r in url_probe_results]
-    )
-    db_connection.commit()
-    db_cursor.close()
-    db_connection.close()
+    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
+        with conn.cursor() as cursor:
+            psycopg2.extras.execute_values(
+                cursor,
+                "insert into url_probes(url, timestamp, http_status_code, response_time_ms) values %s",
+                [(r.url, r.timestamp, r.http_status_code, r.response_time_ms) for r in url_probe_results]
+            )
 
 
 def setup_db():
-    db_connection = psycopg2.connect(DB_CONNECTION_STRING)
-    db_cursor = db_connection.cursor()
-    # {
-    #     "timestamp": now.timestamp(),
-    #     "http_status_code": response.status_code,
-    #     "url": url,
-    #     "response_time_ms": int(response.elapsed.microseconds / 1000)
-    # }
-    db_cursor.execute("""
-    begin;
-
-    create table if not exists url_probes(
-        id bigserial primary key, 
-        url text not null,
-        timestamp timestamp not null,
-        http_status_code int not null,
-        response_time_ms int not null
-    );
-
-    truncate table url_probes;
-
-    commit;
-    """)
-    db_connection.commit()
-    db_cursor.close()
-    db_connection.close()
+    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                begin;
+            
+                create table if not exists url_probes(
+                    id bigserial primary key, 
+                    url text not null,
+                    timestamp timestamp not null,
+                    http_status_code int not null,
+                    response_time_ms int not null
+                );
+            
+                truncate table url_probes;
+            
+                commit;
+            """)
 
 
 def assert_db_contains_exactly_messages(messages):
-    db_connection = psycopg2.connect(DB_CONNECTION_STRING)
-    db_cursor = db_connection.cursor()
-    db_cursor.execute("select http_status_code from url_probes;")
-    db_connection.commit()
-    assert list(map(lambda r: r[0], db_cursor.fetchall())) == messages
-    db_cursor.close()
-    db_connection.close()
+    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("select http_status_code from url_probes;")
+            assert list(map(lambda r: r[0], cursor.fetchall())) == messages
 
 
 def retrieve():
-    db_connection = psycopg2.connect(DB_CONNECTION_STRING)
-    db_cursor = db_connection.cursor()
-    db_cursor.execute("select * from url_probes;")
-    db_connection.commit()
-    url_probes = db_cursor.fetchall()
-    db_cursor.close()
-    db_connection.close()
-    return url_probes
+    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("select * from url_probes;")
+            return cursor.fetchall()
 
 
 if __name__ == '__main__':
