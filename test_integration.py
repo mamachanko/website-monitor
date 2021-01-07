@@ -1,21 +1,35 @@
 import datetime
 import json
+import os
 
 import kafka
 import psycopg2
 import psycopg2.extras
 import requests
 
-STREAM_TOPIC = "website_checker_test"
-DB_CONNECTION_STRING = "postgres://avnadmin:xhy2rtzbyrk14cit@35.198.110.182:26728/website_monitor_test?sslmode=require"
+
+def require_env(env_name):
+    env_value = os.environ.get(env_name)
+    if not env_value:
+        raise Exception("$%s is not set" % env_name)
+    return env_value
+
+
+URL = require_env("WM_URL")
+
+STREAM_TOPIC = require_env("WM_STREAM_TOPIC")
+STREAM_BOOTSTRAP_SERVERS = require_env("WM_STREAM_BOOTSTRAP_SERVERS")
+STREAM_CONSUMER_GROUP_ID = require_env("WM_STREAM_CONSUMER_GROUP_ID")
+STREAM_SSL_CA_FILE = require_env("WM_STREAM_SSL_CA_FILE")
+STREAM_SSL_CERT_FILE = require_env("WM_STREAM_SSL_CERT_FILE")
+STREAM_SSL_KEY_FILE = require_env("WM_STREAM_SSL_KEY_FILE")
+
+DB_CONNECTION_STRING = require_env("WM_DB_CONNECTION_STRING")
 
 
 # -- TEST SETUP --
-# given a running Kafka instance
-#   TODO
 # given a running website
-#   TODO
-#   assuming https://httpbin.com
+# given a running Kafka instance
 # given a running Postgres instance
 # when running the website checker
 # when running the database writer
@@ -50,13 +64,15 @@ class UrlProbeResult:
 
 
 def test_integration():
+    print(os.environ)
+
     setup_db()
     assert_db_contains_exactly_messages([])
 
-    url_probe_result = probe_url("https://httpbin.org/status/200")
+    url_probe_result = probe_url(URL)
     publish_url_probe_result(url_probe_result)
 
-    url_probe_result = probe_url("https://httpbin.org/status/400")
+    url_probe_result = probe_url(URL)
     publish_url_probe_result(url_probe_result)
 
     messages = consume_url_probe_results()
@@ -77,52 +93,43 @@ def probe_url(url):
     )
 
 
-def publish_url_probe_result(message):
+def publish_url_probe_result(url_probe_result):
     producer = kafka.KafkaProducer(
-        bootstrap_servers="stream-sugardubz-dc85.aivencloud.com:26730",
+        bootstrap_servers=STREAM_BOOTSTRAP_SERVERS,
         security_protocol="SSL",
-        ssl_cafile="/Users/floater/workspace/aiven-interview/stream.pem",
-        ssl_certfile="/Users/floater/workspace/aiven-interview/stream.cert",
-        ssl_keyfile="/Users/floater/workspace/aiven-interview/stream.key",
+        ssl_cafile=STREAM_SSL_CA_FILE,
+        ssl_certfile=STREAM_SSL_CERT_FILE,
+        ssl_keyfile=STREAM_SSL_KEY_FILE,
     )
 
-    def on_send_success(record_metadata):
-        print("published %s:%d:%d" % (
-            record_metadata.topic, record_metadata.partition, record_metadata.offset))
-
-    print("publishing ...")
-    producer.send(STREAM_TOPIC, str(message).encode("utf-8")).add_callback(on_send_success)
+    producer.send(STREAM_TOPIC, str(url_probe_result).encode("utf-8"))
 
     producer.flush()
     producer.close()
-    print("done.")
 
 
 def consume_url_probe_results():
     consumer = kafka.KafkaConsumer(
         STREAM_TOPIC,
-        group_id="my-group",
-        bootstrap_servers="stream-sugardubz-dc85.aivencloud.com:26730",
+        group_id=STREAM_CONSUMER_GROUP_ID,
+        bootstrap_servers=STREAM_BOOTSTRAP_SERVERS,
         security_protocol="SSL",
-        ssl_cafile="/Users/floater/workspace/aiven-interview/stream.pem",
-        ssl_certfile="/Users/floater/workspace/aiven-interview/stream.cert",
-        ssl_keyfile="/Users/floater/workspace/aiven-interview/stream.key",
+        ssl_cafile=STREAM_SSL_CA_FILE,
+        ssl_certfile=STREAM_SSL_CERT_FILE,
+        ssl_keyfile=STREAM_SSL_KEY_FILE,
         auto_offset_reset="earliest",
     )
 
-    print("consuming ...")
-
-    # https://help.aiven.io/en/articles/489572-getting-started-with-aiven-kafka
+    # With the help of:
+    #   https://help.aiven.io/en/articles/489572-getting-started-with-aiven-kafka
     messages = []
     for _ in range(2):
         for _, ms in consumer.poll(timeout_ms=1000).items():
             for message in ms:
-                print("Received: {}".format(message.value))
                 messages.append(UrlProbeResult.from_json(message.value.decode("utf-8")))
 
     consumer.commit()
     consumer.close()
-    print("done.")
 
     return messages
 
