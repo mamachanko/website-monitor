@@ -130,3 +130,6 @@ dmypy.json
 
 # JetBrains products
 .idea
+
+# direnv
+.envrc
