@@ -1,10 +1,11 @@
 from website_monitor import stream, database, env
+from website_monitor.url_probe import UrlProbe
 
 
 def main():
-    url_probes, commit = stream.consume()
+    records, commit = stream.consume()
     db = database.Database(env.require_env("WM_DB_CONNECTION_STRING"))
-    db.store(url_probes)
+    db.save(map(UrlProbe.from_json, records))
     commit()
 
 

@@ -1,7 +1,6 @@
 import kafka
 
 from website_monitor.env import require_env
-from website_monitor.url_probe import UrlProbe
 
 
 def publish(message):
@@ -36,7 +35,7 @@ def consume():
     # Inspired by
     # https://help.aiven.io/en/articles/489572-getting-started-with-aiven-kafka
 
-    url_probes: list[UrlProbe] = []
+    records: list[str] = []
     poll_count = 0
     while poll_count := poll_count + 1:
         poll = consumer.poll(timeout_ms=1000, max_records=10)
@@ -45,13 +44,10 @@ def consume():
         if poll_count > 1 and len(poll) == 0:
             break
 
-        for raw_url_probes in poll.values():
-            for url_probe_json in raw_url_probes:
-                url_probe = UrlProbe.from_json(url_probe_json.value.decode("utf-8"))
-                url_probes.append(url_probe)
+        records += map(lambda r: r.value.decode("utf-8"), poll.values())
 
-    def commit():
+    def commit() -> None:
         consumer.commit()
         consumer.close()
 
-    return url_probes, commit
+    return records, commit

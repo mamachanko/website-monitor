@@ -1,6 +1,8 @@
 import psycopg2
 import psycopg2.extras
 
+from website_monitor.url_probe import UrlProbe
+
 
 class Database:
 
@@ -20,7 +22,7 @@ class Database:
                     );
                 """)
 
-    def clear(self):
+    def delete_all(self):
         with psycopg2.connect(self.connection_string) as conn:
             with conn.cursor() as cursor:
                 cursor.execute("truncate table url_probes;")
@@ -31,7 +33,7 @@ class Database:
                 cursor.execute("select * from url_probes;")
                 return cursor.fetchall()
 
-    def store(self, url_probes):
+    def save(self, url_probes: list[UrlProbe]):
         with psycopg2.connect(self.connection_string) as conn:
             with conn.cursor() as cursor:
                 psycopg2.extras.execute_values(

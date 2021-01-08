@@ -10,7 +10,7 @@ def db():
     db_connection_string = env.require_env("WM_DB_CONNECTION_STRING")
     db = database.Database(db_connection_string)
     db.setup()
-    db.clear()
+    db.delete_all()
     return db
 
 
