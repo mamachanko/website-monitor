@@ -44,7 +44,9 @@ def consume():
         if poll_count > 1 and len(poll) == 0:
             break
 
-        records += map(lambda r: r.value.decode("utf-8"), poll.values())
+        for polled_records in poll.values():
+            for raw_record in polled_records:
+                records.append(raw_record.value.decode("utf-8"))
 
     def commit() -> None:
         consumer.commit()
