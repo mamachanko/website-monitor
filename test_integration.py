@@ -1,54 +1,25 @@
-import psycopg2
-import psycopg2.extras
+import pytest
 
-from website_monitor import consume_and_write
+from website_monitor import consume_and_write, database
 from website_monitor import env
 from website_monitor import probe_and_publish
 
-DB_CONNECTION_STRING = env.require_env("WM_DB_CONNECTION_STRING")
+
+@pytest.fixture
+def db():
+    db_connection_string = env.require_env("WM_DB_CONNECTION_STRING")
+    db = database.Database(db_connection_string)
+    db.setup()
+    db.clear()
+    return db
 
 
-def test_integration():
-    setup_db()
-    assert_db_contains_exactly_messages([])
+def test_integration(db):
+    assert len(db.find_all()) == 0
 
     probe_and_publish.main()
     probe_and_publish.main()
 
     consume_and_write.main()
 
-    assert len(retrieve()) == 2
-
-
-def setup_db():
-    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                begin;
-            
-                create table if not exists url_probes(
-                    id bigserial primary key, 
-                    url text not null,
-                    timestamp timestamp not null,
-                    http_status_code int not null,
-                    response_time_ms int not null
-                );
-            
-                truncate table url_probes;
-            
-                commit;
-            """)
-
-
-def assert_db_contains_exactly_messages(messages):
-    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("select http_status_code from url_probes;")
-            assert list(map(lambda r: r[0], cursor.fetchall())) == messages
-
-
-def retrieve():
-    with psycopg2.connect(DB_CONNECTION_STRING) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("select * from url_probes;")
-            return cursor.fetchall()
+    assert len(db.find_all()) == 2
