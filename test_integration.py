@@ -14,7 +14,7 @@ def db():
     return db
 
 
-def test_integration(db):
+def test_probes_get_published_consumed_and_written(db):
     assert len(db.find_all()) == 0
 
     probe_and_publish.main()
