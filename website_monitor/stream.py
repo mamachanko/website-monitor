@@ -1,9 +1,11 @@
+from typing import Tuple, Callable
+
 import kafka
 
 from website_monitor.env import require_env
 
 
-def publish(message):
+def publish(message: str) -> None:
     producer = kafka.KafkaProducer(
         bootstrap_servers=require_env("WM_STREAM_BOOTSTRAP_SERVERS"),
         security_protocol="SSL",
@@ -18,7 +20,7 @@ def publish(message):
     producer.close()
 
 
-def consume():
+def consume() -> Tuple[list[str], Callable[[], None]]:
     consumer = kafka.KafkaConsumer(
         require_env("WM_STREAM_TOPIC"),
         group_id=require_env("WM_STREAM_CONSUMER_GROUP_ID"),
