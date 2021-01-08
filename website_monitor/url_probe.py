@@ -5,7 +5,7 @@ import requests
 
 
 # TODO make it a namedtuple
-class UrlProbeResult:
+class UrlProbe:
     def __init__(self, url, timestamp, http_status_code, response_time_ms):
         self.response_time_ms = response_time_ms
         self.http_status_code = http_status_code
@@ -23,7 +23,7 @@ class UrlProbeResult:
     @staticmethod
     def from_json(data):
         url_probe_result = json.loads(data)
-        return UrlProbeResult(
+        return UrlProbe(
             url=url_probe_result["url"],
             timestamp=url_probe_result["timestamp"],
             http_status_code=url_probe_result["http_status_code"],
@@ -34,7 +34,7 @@ class UrlProbeResult:
 def probe_url(url):
     now = datetime.utcnow()
     response = requests.get(url, timeout=5000)
-    return UrlProbeResult(
+    return UrlProbe(
         url=url,
         timestamp=str(now),
         http_status_code=response.status_code,
