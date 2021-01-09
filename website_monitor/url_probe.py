@@ -38,5 +38,5 @@ def probe_url(url):
         url=url,
         timestamp=str(now),
         http_status_code=response.status_code,
-        response_time_ms=int(response.elapsed.microseconds / 1000)
+        response_time_ms=int(response.elapsed.total_seconds() * 1000)
     )
