@@ -8,20 +8,34 @@ from website_monitor import env
 from website_monitor import probe_and_publish
 from website_monitor.repository import Repository
 from website_monitor.stats import Stats
+from website_monitor.streamtopic import StreamTopic
 from website_monitor.url_probe import UrlProbe
 
 
 @pytest.fixture
-def repository():
+def repository() -> Repository:
     repository = Repository(env.require_env("WM_DB_CONNECTION_STRING"))
     repository.setup()
     repository.delete_all()
     return repository
 
 
+@pytest.fixture
+def stream_topic() -> StreamTopic:
+    stream_topic = StreamTopic(
+        topic=env.require_env("WM_STREAM_TOPIC"),
+        bootstrap_servers=env.require_env("WM_STREAM_BOOTSTRAP_SERVERS"),
+        ssl_cafile=env.require_env("WM_STREAM_SSL_CA_FILE"),
+        ssl_certfile=env.require_env("WM_STREAM_SSL_CERT_FILE"),
+        ssl_keyfile=env.require_env("WM_STREAM_SSL_KEY_FILE"),
+    )
+    stream_topic.exhaust(group_id=env.require_env("WM_STREAM_CONSUMER_GROUP_ID"))
+    return stream_topic
+
+
 class TestIntegration:
 
-    def test_probes_get_published_consumed_and_written(self, repository):
+    def test_probes_get_published_consumed_and_written(self, repository: Repository, stream_topic: StreamTopic):
         assert repository.get_stats() == []
 
         probe_and_publish.main()
@@ -122,9 +136,9 @@ class TestRepository:
             Stats(
                 url="https://example.com",
                 probes=100,
-                p50_ms=10.0,
-                p95_ms=10.0,
-                p99_ms=10.0,
+                p50_ms=1000.0,
+                p95_ms=1000.0,
+                p99_ms=1000.0,
             )
         ]
 
@@ -142,13 +156,13 @@ class TestRepository:
             Stats(
                 url="https://httpbin.org",
                 probes=3,
-                p50_ms=1000.0,
+                p50_ms=2000.0,
                 p95_ms=2900.0,
                 p99_ms=2980.0,
             )
         ]
 
-    def create_url_probes(*response_times_ms: list[int], url: str, timestamp: datetime, http_status_code: int) \
+    def create_url_probes(self, *response_times_ms: list[int], url: str, timestamp: datetime, http_status_code: int) \
             -> list[UrlProbe]:
         return [UrlProbe(
             url=url,
@@ -158,7 +172,22 @@ class TestRepository:
         ) for response_time_ms in response_times_ms]
 
 
-class TestStream:
+class TestStreamTopic:
 
-    def test_fails(self):
-        assert False
+    def test_consumes_messages_published_to_topic(self, stream_topic: StreamTopic):
+        stream_topic.publish("test message 1")
+        stream_topic.publish("test message 2")
+
+        (records, commit) = stream_topic.consume(group_id=env.require_env("WM_STREAM_CONSUMER_GROUP_ID"))
+        commit()
+
+        assert records == [
+            "test message 1",
+            "test message 2"
+        ]
+
+    def test_consumes_nothing_when_topic_is_exhausted(self, stream_topic: StreamTopic):
+        (records, commit) = stream_topic.consume(group_id=env.require_env("WM_STREAM_CONSUMER_GROUP_ID"))
+        commit()
+
+        assert records == []
