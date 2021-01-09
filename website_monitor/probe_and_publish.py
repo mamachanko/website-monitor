@@ -12,9 +12,9 @@ def main():
     ssl_certfile = require_env("WM_STREAM_SSL_CERT_FILE")
     ssl_keyfile = require_env("WM_STREAM_SSL_KEY_FILE")
 
-    result = UrlProbe.probe(url)
+    url_probe = UrlProbe.probe(url)
     publish(
-        message=str(result),
+        message=url_probe.json,
         bootstrap_servers=bootstrap_servers,
         topic=topic,
         ssl_cafile=ssl_cafile,

@@ -1,5 +1,5 @@
-from website_monitor.database import Database
 from website_monitor.env import require_env
+from website_monitor.repository import Repository
 from website_monitor.stream import consume
 from website_monitor.url_probe import UrlProbe
 
@@ -22,8 +22,8 @@ def main():
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,
     )
-    db = Database(db_connection_string)
-    db.save(map(UrlProbe.from_json, records))
+    repository = Repository(db_connection_string)
+    repository.save(map(UrlProbe.from_json, records))
     commit()
 
 

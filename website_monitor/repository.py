@@ -4,7 +4,12 @@ import psycopg2.extras
 from website_monitor.url_probe import UrlProbe
 
 
-class Database:
+class Repository:
+    """
+    The URL probe repository.
+
+    Implements the repository pattern to hide the database interaction details.
+    """
 
     def __init__(self, connection_string) -> None:
         self.connection_string = connection_string
@@ -27,11 +32,11 @@ class Database:
             with conn.cursor() as cursor:
                 cursor.execute("truncate table url_probes;")
 
-    def find_all(self):
+    def find_all(self) -> list[UrlProbe]:
         with psycopg2.connect(self.connection_string) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("select * from url_probes;")
-                return cursor.fetchall()
+                cursor.execute("select url, timestamp, http_status_code, response_time_ms from url_probes;")
+                return list(map(UrlProbe._make, cursor.fetchall()))
 
     def save(self, url_probes: list[UrlProbe]):
         with psycopg2.connect(self.connection_string) as conn:
