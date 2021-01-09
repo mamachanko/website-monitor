@@ -9,9 +9,9 @@ def main():
     db_connection_string = require_env("WM_DB_CONNECTION_STRING")
 
     repository = Repository(db_connection_string)
+    print("results:")
     for i, stats in enumerate(repository.get_stats()):
         print(dedent(f"""
-        results:
         - url: {stats.url}
           probes_total: {stats.probes}
           percentiles:
