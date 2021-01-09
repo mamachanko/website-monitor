@@ -2,9 +2,10 @@ from datetime import datetime
 
 import pytest
 
-from website_monitor import consume_and_write, database, url_probe
+from website_monitor import consume_and_write, database
 from website_monitor import env
 from website_monitor import probe_and_publish
+from website_monitor.url_probe import UrlProbe
 
 
 @pytest.fixture
@@ -33,19 +34,19 @@ class TestUrlProbe:
 
     @pytest.mark.parametrize("url", ["https://example.com", "https://httpbin.org"])
     def test_has_url(self, url):
-        result = url_probe.probe_url(url)
+        result = UrlProbe.probe(url)
         assert result.url == url
 
     def test_records_utc_now_as_timestamp(self):
         before = datetime.utcnow()
-        result = url_probe.probe_url("https://httpbin.org/status/200")
+        result = UrlProbe.probe("https://httpbin.org/status/200")
         after = datetime.utcnow()
 
         assert before < datetime.fromisoformat(result.timestamp) < after
 
     @pytest.mark.parametrize("http_status_code", [200, 400])
     def test_has_status_code(self, http_status_code):
-        result = url_probe.probe_url("https://httpbin.org/status/%s" % http_status_code)
+        result = UrlProbe.probe("https://httpbin.org/status/%s" % http_status_code)
         assert result.http_status_code == http_status_code
 
     @pytest.mark.parametrize("delay_s", [0.1, 2])
@@ -56,7 +57,7 @@ class TestUrlProbe:
         min = (delay_s * 1000) - margin_ms
         max = (delay_s * 1000) + margin_ms
 
-        result = url_probe.probe_url("https://httpbin.org/delay/%s" % delay_s)
+        result = UrlProbe.probe("https://httpbin.org/delay/%s" % delay_s)
 
         assert min < result.response_time_ms < max
 

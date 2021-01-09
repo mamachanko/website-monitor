@@ -1,6 +1,6 @@
 from website_monitor.env import require_env
 from website_monitor.stream import publish
-from website_monitor.url_probe import probe_url
+from website_monitor.url_probe import UrlProbe
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     ssl_certfile = require_env("WM_STREAM_SSL_CERT_FILE")
     ssl_keyfile = require_env("WM_STREAM_SSL_KEY_FILE")
 
-    result = probe_url(url)
+    result = UrlProbe.probe(url)
     publish(
         message=str(result),
         bootstrap_servers=bootstrap_servers,
