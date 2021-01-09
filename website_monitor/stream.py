@@ -2,33 +2,33 @@ from typing import Tuple, Callable
 
 import kafka
 
-from website_monitor.env import require_env
 
-
-def publish(message: str) -> None:
+def publish(message: str, bootstrap_servers: str, ssl_cafile: str, ssl_certfile: str, ssl_keyfile: str,
+            topic: str) -> None:
     producer = kafka.KafkaProducer(
-        bootstrap_servers=require_env("WM_STREAM_BOOTSTRAP_SERVERS"),
+        bootstrap_servers=bootstrap_servers,
         security_protocol="SSL",
-        ssl_cafile=require_env("WM_STREAM_SSL_CA_FILE"),
-        ssl_certfile=require_env("WM_STREAM_SSL_CERT_FILE"),
-        ssl_keyfile=require_env("WM_STREAM_SSL_KEY_FILE"),
+        ssl_cafile=ssl_cafile,
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
     )
 
-    producer.send(require_env("WM_STREAM_TOPIC"), message.encode("utf-8"))
+    producer.send(topic, message.encode("utf-8"))
 
     producer.flush()
     producer.close()
 
 
-def consume() -> Tuple[list[str], Callable[[], None]]:
+def consume(topic: str, bootstrap_servers: str, group_id: str, ssl_cafile: str,
+            ssl_certfile: str, ssl_keyfile: str) -> Tuple[list[str], Callable[[], None]]:
     consumer = kafka.KafkaConsumer(
-        require_env("WM_STREAM_TOPIC"),
-        group_id=require_env("WM_STREAM_CONSUMER_GROUP_ID"),
-        bootstrap_servers=require_env("WM_STREAM_BOOTSTRAP_SERVERS"),
+        topic,
+        group_id=group_id,
+        bootstrap_servers=bootstrap_servers,
         security_protocol="SSL",
-        ssl_cafile=require_env("WM_STREAM_SSL_CA_FILE"),
-        ssl_certfile=require_env("WM_STREAM_SSL_CERT_FILE"),
-        ssl_keyfile=require_env("WM_STREAM_SSL_KEY_FILE"),
+        ssl_cafile=ssl_cafile,
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
         api_version=(2,),
         auto_offset_reset="earliest",
         enable_auto_commit=False
