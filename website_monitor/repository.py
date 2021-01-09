@@ -48,15 +48,15 @@ class Repository:
                     [(up.url, up.timestamp, up.http_status_code, up.response_time_ms) for up in url_probes]
                 )
 
-    def get_stats(self) -> dict[str, Stats]:
+    def get_stats(self) -> list[Stats]:
         with psycopg2.connect(self.connection_string) as conn:
             with conn.cursor() as cursor:
                 cursor.execute("""
                     select url,
                            count(*) as probes,
-                           percentile_disc(0.5) within group (order by url_probes.response_time_ms)  as p50_ms,
-                           percentile_disc(0.95) within group (order by url_probes.response_time_ms) as p95_ms,
-                           percentile_disc(0.99) within group (order by url_probes.response_time_ms) as p99_ms
+                           percentile_cont(0.5) within group (order by url_probes.response_time_ms)  as p50_ms,
+                           percentile_cont(0.95) within group (order by url_probes.response_time_ms) as p95_ms,
+                           percentile_cont(0.99) within group (order by url_probes.response_time_ms) as p99_ms
                     from url_probes
                     group by url;
                 """)
