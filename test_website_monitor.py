@@ -7,6 +7,7 @@ from website_monitor import consume_and_write
 from website_monitor import env
 from website_monitor import probe_and_publish
 from website_monitor.repository import Repository
+from website_monitor.stats import Stats
 from website_monitor.url_probe import UrlProbe
 
 
@@ -105,6 +106,38 @@ class TestRepository:
 
     def test_retrieves_no_url_probes(self, repository: Repository):
         assert repository.find_all() == []
+
+    def test_reports_stats(self, repository: Repository):
+        repository.save([UrlProbe(
+            url="https://example.com",
+            timestamp=datetime.utcnow(),
+            http_status_code=123,
+            response_time_ms=456
+        ), UrlProbe(
+            url="https://httpbin.org",
+            timestamp=datetime.utcnow(),
+            http_status_code=321,
+            response_time_ms=654
+        )])
+
+        stats = repository.get_stats()
+
+        assert stats == [
+            Stats(
+                url="https://example.com",
+                probes=1,
+                p50_ms=456,
+                p95_ms=456,
+                p99_ms=456,
+            ),
+            Stats(
+                url="https://httpbin.org",
+                probes=1,
+                p50_ms=654,
+                p95_ms=654,
+                p99_ms=654,
+            )
+        ]
 
 
 class TestStream:
