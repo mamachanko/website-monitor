@@ -18,7 +18,7 @@ python -m website_monitor.consume_and_write
 python -m website_monitor.show_stats
 ```
 
-Tested under Python 3.9.
+Tested with Python 3.9 and services hosted by [Aiven](https://aiven.io).
 
 ## Configuration
 
