@@ -1,3 +1,5 @@
+![tests](https://github.com/mamachanko/website-monitor/workflows/tests/badge.svg)
+
 # Website Monitor
 
 > A simple monitoring tool 🔭 to track response times and HTTP status for URLs using Kafka 🐞 and Postgres 🐘.

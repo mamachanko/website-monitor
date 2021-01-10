@@ -1,0 +1,70 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - run: 'echo "$WM_STREAM_SSL_CA" > ${{ runner.temp }}/stream.pem'
+      shell: bash
+      env:
+        WM_STREAM_SSL_CA: ${{ secrets.WM_STREAM_SSL_CA }}
+    - run: 'echo "$WM_STREAM_SSL_CERT" > ${{ runner.temp }}/stream.cert'
+      shell: bash
+      env:
+        WM_STREAM_SSL_CERT: ${{ secrets.WM_STREAM_SSL_CERT }}
+    - run: 'echo "$WM_STREAM_SSL_KEY" > ${{ runner.temp }}/stream.key'
+      shell: bash
+      env:
+        WM_STREAM_SSL_KEY: ${{ secrets.WM_STREAM_SSL_KEY }}
+    - name: debug env
+      env:
+        WM_STREAM_SSL_CA_FILE: ${{ runner.temp }}/stream.pem
+        WM_STREAM_SSL_CERT_FILE: ${{ runner.temp }}/stream.cert
+        WM_STREAM_SSL_KEY_FILE: ${{ runner.temp }}/stream.key
+      shell: bash
+      run: |
+        set +x
+        env | grep WM_
+        ls -lah
+        cat $WM_STREAM_SSL_CA_FILE
+        cat $WM_STREAM_SSL_CERT_FILE
+        cat $WM_STREAM_SSL_KEY_FILE
+    - name: Test with pytest
+      env:
+        WM_DB_CONNECTION_STRING: ${{ secrets.WM_DB_CONNECTION_STRING }}
+        WM_STREAM_TOPIC: ${{ secrets.WM_STREAM_TOPIC }}
+        WM_URL: ${{ secrets.WM_URL }}
+        WM_STREAM_BOOTSTRAP_SERVERS: ${{ secrets.WM_STREAM_BOOTSTRAP_SERVERS }}
+        WM_STREAM_CONSUMER_GROUP_ID: ${{ secrets.WM_STREAM_CONSUMER_GROUP_ID }}
+        WM_STREAM_SSL_CA_FILE: ${{ runner.temp }}/stream.pem
+        WM_STREAM_SSL_CERT_FILE: ${{ runner.temp }}/stream.cert
+        WM_STREAM_SSL_KEY_FILE: ${{ runner.temp }}/stream.key
+      run: |
+        pytest
