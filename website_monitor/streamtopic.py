@@ -7,8 +7,11 @@ class StreamTopic:
     """
     Represents a Kafka stream topic which messages can be published to and consumed from.
     """
-    security_protocol = "SSL"
-    api_version = (2,)
+    _security_protocol = "SSL"
+
+    # An attempt to resolve the frequent NoBrokersAvailable exception.
+    # https://github.com/dpkp/kafka-python/issues/1308
+    _api_version = (2,)
 
     def __init__(self, bootstrap_servers: str, topic: str, ssl_cafile: str, ssl_certfile: str,
                  ssl_keyfile: str) -> None:
@@ -62,7 +65,7 @@ class StreamTopic:
     def _create_producer(self):
         return kafka.KafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
-            security_protocol=self.security_protocol,
+            security_protocol=self._security_protocol,
             ssl_cafile=self.ssl_cafile,
             ssl_certfile=self.ssl_certfile,
             ssl_keyfile=self.ssl_keyfile,
@@ -77,7 +80,7 @@ class StreamTopic:
             ssl_cafile=self.ssl_cafile,
             ssl_certfile=self.ssl_certfile,
             ssl_keyfile=self.ssl_keyfile,
-            api_version=self.api_version,
+            api_version=self._api_version,
             auto_offset_reset="earliest",
             enable_auto_commit=False
         )
