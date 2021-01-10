@@ -38,7 +38,7 @@ WM_STREAM_SSL_KEY_FILE # the path to the Kafka SSL key file
 ## Example
 
 ```shell
-$ source <(cat <<EOF
+source <(cat <<EOF
 WM_DB_CONNECTION_STRING=postgres://username:password@my-postgres:5432/website_monitor
 WM_STREAM_TOPIC=website_monitor
 WM_STREAM_BOOTSTRAP_SERVERS=my-kafka:1234
@@ -48,13 +48,20 @@ WM_STREAM_SSL_CERT_FILE=kafka.cert
 WM_STREAM_SSL_KEY_FILE=kafka.key
 EOF
 )
-$ WM_URL=https://httpbin.org/delay/2 python -m website_monitor.probe_and_publish
-$ for i in {1..10}; do
-> WM_URL=https://httpbin.org/status/200 python -m website_monitor.probe_and_publish
-> sleep 1;
-> done
-$ python -m website_monitor.consume_and_write
+
+WM_URL=https://httpbin.org/delay/2 python -m website_monitor.probe_and_publish
+
+for i in {1..10}; do
+  WM_URL=https://httpbin.org/status/200 python -m website_monitor.probe_and_publish
+  sleep 1;
+done
+
+python -m website_monitor.consume_and_write
+```
+Will produce results like this:
+```
 $ python -m website_monitor.show_stats
+
 results:
 
 - url: https://httpbin.org/delay/2
@@ -70,6 +77,7 @@ results:
     p50_ms: 462.0
     p50_ms: 2060.149999999998
     p95_ms: 3348.0300000000016
+
 
 ```
 
