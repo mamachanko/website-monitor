@@ -20,6 +20,10 @@ python -m website_monitor.show_stats
 
 Tested with Python 3.9 and services hosted by [Aiven](https://aiven.io).
 
+See issues for outstanding todos.
+
+See [discussion](#Discussion) for notes on design decisions, areas of improvement and known issues.
+
 ## Configuration
 
 The `website_monitor`'s components depend on environment variables namespaced within `WM_`:
@@ -39,7 +43,7 @@ WM_STREAM_SSL_KEY_FILE # the path to the Kafka SSL key file
 
 ```shell
 source <(cat <<EOF
-WM_DB_CONNECTION_STRING=postgres://username:password@my-postgres:5432/website_monitor
+WM_DB_CONNECTION_STRING="postgres://username:password@my-postgres:5432/website_monitor"
 WM_STREAM_TOPIC=website_monitor
 WM_STREAM_BOOTSTRAP_SERVERS=my-kafka:1234
 WM_STREAM_CONSUMER_GROUP_ID=website-monitor-consumers
@@ -78,7 +82,6 @@ results:
     p50_ms: 2060.149999999998
     p95_ms: 3348.0300000000016
 
-
 ```
 
 ## Example deployment ☸️
@@ -86,7 +89,9 @@ results:
 See `example-deployment/` for an example deployment to Kubernetes. It runs periodic probes of a URL in one pod and
 consumes the results from another.
 
-## Design decisions, areas of improvement and known issues.
+## Discussion
+
+Let's talk about design decisions, areas of improvement and known issues.
 
 The `website_monitor` leaves it to the user to implement periodic probing of a URL. This can be viewed as a merit but
 also as a drawback. For one, it lends itself well as a CLI and can be easily run periodically by wrapping it with a
