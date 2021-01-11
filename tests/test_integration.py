@@ -7,6 +7,7 @@ class TestIntegration:
 
     def test_probes_get_published_consumed_and_written(self, repository: Repository, stream_topic: StreamTopic):
         assert repository.get_stats() == []
+        assert repository.find_all() == []
 
         probe_and_publish.main()
         probe_and_publish.main()
