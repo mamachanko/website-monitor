@@ -91,13 +91,17 @@ consumes the results from another.
 
 ## Discussion
 
-Let's talk about design decisions, areas of improvement and known issues.
+Let's talk about design decisions, areas of improvement and known issues. See issues for outstanding todos.
 
 The `website_monitor` leaves it to the user to implement periodic probing of a URL. This can be viewed as a merit but
 also as a drawback. For one, it lends itself well as a CLI and can be easily run periodically by wrapping it with a
 Bash `for` or `while` loop. On the other hand it puts the burden on the deployment to run it periodically if that is
 desired. However, platforms like Kubernetes have cron jobs. Alternatively, one could have implemented long-running
 processes.
+
+In hindsight, the CLI design turned out to be not ideal. A globally installed CLI that takes command line args and / or
+environment variables would be nicer. See this [issue](https://github.com/mamachanko/website-monitor/issues/2) for a
+possibly nicer design.
 
 The use of Kafka is naïve and possibly wasteful. This is to be blamed on my ignorance of Kafka and its patterns.
 
