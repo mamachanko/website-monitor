@@ -20,7 +20,7 @@ python -m website_monitor.show_stats
 
 Tested with Python 3.9 and services hosted by [Aiven](https://aiven.io).
 
-See issues for outstanding todos.
+See open issues for outstanding todos.
 
 See [discussion](#Discussion) for notes on design decisions, areas of improvement and known issues.
 
