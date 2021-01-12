@@ -24,5 +24,5 @@ def main():
     stream.publish(message=url_probe.json)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

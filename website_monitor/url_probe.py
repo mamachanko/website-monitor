@@ -5,8 +5,9 @@ from datetime import datetime
 import requests
 
 
-class UrlProbe(namedtuple("UrlProbe", ["url", "timestamp", "http_status_code", "response_time_ms"])):
-
+class UrlProbe(
+    namedtuple("UrlProbe", ["url", "timestamp", "http_status_code", "response_time_ms"])
+):
     @classmethod
     def probe(cls, url):
         now = datetime.utcnow()
@@ -15,7 +16,7 @@ class UrlProbe(namedtuple("UrlProbe", ["url", "timestamp", "http_status_code", "
             url=url,
             timestamp=now,
             http_status_code=response.status_code,
-            response_time_ms=int(response.elapsed.total_seconds() * 1000)
+            response_time_ms=int(response.elapsed.total_seconds() * 1000),
         )
 
     @property

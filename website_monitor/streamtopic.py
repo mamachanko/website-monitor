@@ -7,14 +7,21 @@ class StreamTopic:
     """
     Represents a Kafka stream topic which messages can be published to and consumed from.
     """
+
     _security_protocol = "SSL"
 
     # An attempt to resolve the frequent NoBrokersAvailable exception.
     # https://github.com/dpkp/kafka-python/issues/1308
     _api_version = (2,)
 
-    def __init__(self, bootstrap_servers: str, topic: str, ssl_cafile: str, ssl_certfile: str,
-                 ssl_keyfile: str) -> None:
+    def __init__(
+        self,
+        bootstrap_servers: str,
+        topic: str,
+        ssl_cafile: str,
+        ssl_certfile: str,
+        ssl_keyfile: str,
+    ) -> None:
         self.bootstrap_servers = bootstrap_servers
         self.topic = topic
         self.ssl_certfile = ssl_certfile
@@ -82,5 +89,5 @@ class StreamTopic:
             ssl_keyfile=self.ssl_keyfile,
             api_version=self._api_version,
             auto_offset_reset="earliest",
-            enable_auto_commit=False
+            enable_auto_commit=False,
         )
