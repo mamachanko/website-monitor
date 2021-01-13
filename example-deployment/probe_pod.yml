@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: probe
+spec:
+  containers:
+    - name: probe
+      image: mamachanko/wm:latest
+      imagePullPolicy: Always
+      command: [ "bash" ]
+      args:
+        - -c
+        - -euo
+        - pipefail
+        - |
+          while true; do
+            wm probe \
+             "$WM_URL" \
+              --bootstrap-server="$WM_STREAM_BOOTSTRAP_SERVERS" \
+              --topic="$WM_STREAM_TOPIC" \
+              --ssl-cafile="$WM_STREAM_SSL_CA_FILE" \
+              --ssl-certfile="$WM_STREAM_SSL_CERT_FILE" \
+              --ssl-keyfile="$WM_STREAM_SSL_KEY_FILE"
+            sleep 10
+          done
+      env:
+        - name: WM_URL
+          valueFrom:
+            secretKeyRef:
+              name: website-monitor-config
+              key: wm.url
+        - name: WM_STREAM_BOOTSTRAP_SERVERS
+          valueFrom:
+            secretKeyRef:
+              name: website-monitor-config
+              key: wm.stream.bootstrap-servers
+        - name: WM_STREAM_TOPIC
+          valueFrom:
+            secretKeyRef:
+              name: website-monitor-config
+              key: wm.stream.topic
+        - name: WM_STREAM_SSL_CA_FILE
+          value: "/var/secrets/wm.stream.ssl_ca_file"
+        - name: WM_STREAM_SSL_CERT_FILE
+          value: "/var/secrets/wm.stream.ssl_cert_file"
+        - name: WM_STREAM_SSL_KEY_FILE
+          value: "/var/secrets/wm.stream.ssl_key_file"
+      volumeMounts:
+        - mountPath: "/var/secrets"
+          name: secrets-volume
+          readOnly: true
+  volumes:
+    - name: secrets-volume
+      secret:
+        secretName: website-monitor-config
