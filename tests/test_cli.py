@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from click.testing import CliRunner
 
 from website_monitor import env
@@ -99,6 +100,31 @@ class TestCLI:
         )
         stats = json.loads(result.output)
         assert len(stats["stats"]) == 2, stats
-        # This test is flakey.
+        # This test is flaky.
         assert_url_stats_match(stats["stats"][1], 1, test_url_once)
         assert_url_stats_match(stats["stats"][0], 2, test_url_twice)
+
+    @pytest.mark.parametrize(
+        "subcommand,ssl_file_option",
+        [
+            ("probe", "--ssl-cafile"),
+            ("probe", "--ssl-certfile"),
+            ("probe", "--ssl-keyfile"),
+            ("flush", "--ssl-cafile"),
+            ("flush", "--ssl-certfile"),
+            ("flush", "--ssl-keyfile"),
+        ],
+    )
+    def test_subcommand_fails_when_ssl_file_does_not_exist(
+        self, subcommand, ssl_file_option
+    ):
+        runner = CliRunner()
+        result = runner.invoke(
+            wm,
+            [
+                subcommand,
+                ssl_file_option + "=this-file-does-not-exist",
+            ],
+        )
+        assert result.exit_code != 0, result
+        assert "Path 'this-file-does-not-exist' does not exist" in result.output, result
