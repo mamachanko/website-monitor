@@ -7,7 +7,6 @@ from website_monitor.url_probe import UrlProbe
 
 
 class TestUrlProbe:
-
     @pytest.mark.parametrize("url", ["https://example.com", "https://httpbin.org"])
     def test_has_url(self, url):
         result = UrlProbe.probe(url)
@@ -38,27 +37,33 @@ class TestUrlProbe:
         assert at_least < result.response_time_ms < at_most
 
     def test_serializes_to_json(self):
-        assert json.loads(UrlProbe(
-            url="https://example.com",
-            timestamp=datetime.min,
-            http_status_code=123,
-            response_time_ms=456
-        ).json) == json.loads("""{
+        assert json.loads(
+            UrlProbe(
+                url="https://example.com",
+                timestamp=datetime.min,
+                http_status_code=123,
+                response_time_ms=456,
+            ).json
+        ) == json.loads(
+            """{
           "url": "https://example.com",
           "timestamp": "0001-01-01 00:00:00",
           "http_status_code": 123,
           "response_time_ms": 456
-        }""")
+        }"""
+        )
 
     def test_deserializes_from_json(self):
         assert UrlProbe(
             url="https://example.com",
             timestamp=datetime.min,
             http_status_code=123,
-            response_time_ms=456
-        ) == UrlProbe.from_json("""{
+            response_time_ms=456,
+        ) == UrlProbe.from_json(
+            """{
           "url": "https://example.com",
           "timestamp": "0001-01-01 00:00:00",
           "http_status_code": 123,
           "response_time_ms": 456
-        }""")
+        }"""
+        )
