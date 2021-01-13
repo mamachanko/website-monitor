@@ -4,7 +4,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-image_name="mamachanko/website-monitor:latest"
+image_name="mamachanko/wm:latest"
 
 docker build \
   .. \

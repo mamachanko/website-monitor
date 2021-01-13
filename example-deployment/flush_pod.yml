@@ -28,22 +28,22 @@ spec:
         - name: WM_DB_CONNECTION_STRING
           valueFrom:
             secretKeyRef:
-              name: website-monitor-config
+              name: wm-config
               key: wm.db.connection-string
         - name: WM_STREAM_BOOTSTRAP_SERVERS
           valueFrom:
             secretKeyRef:
-              name: website-monitor-config
+              name: wm-config
               key: wm.stream.bootstrap-servers
         - name: WM_STREAM_TOPIC
           valueFrom:
             secretKeyRef:
-              name: website-monitor-config
+              name: wm-config
               key: wm.stream.topic
         - name: WM_STREAM_CONSUMER_GROUP_ID
           valueFrom:
             secretKeyRef:
-              name: website-monitor-config
+              name: wm-config
               key: wm.stream.consumer_group_id
         - name: WM_STREAM_SSL_CA_FILE
           value: "/var/secrets/wm.stream.ssl_ca_file"

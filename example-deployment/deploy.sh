@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 ./clean.sh
 
-kubectl create secret generic website-monitor-config \
+kubectl create secret generic wm-config \
   --from-literal=wm.url="${WM_URL:?}" \
   --from-literal=wm.db.connection-string="${WM_DB_CONNECTION_STRING:?}" \
   --from-literal=wm.stream.bootstrap-servers="${WM_STREAM_BOOTSTRAP_SERVERS:?}" \
@@ -17,5 +17,5 @@ kubectl create secret generic website-monitor-config \
   --from-literal=wm.stream.ssl_key_file="$(cat "${WM_STREAM_SSL_KEY_FILE:?}")"
 
 kubectl apply \
-  --filename probe_and_publish_pod.yml \
-  --filename consume_and_write_pod.yml
+  --filename probe_pod.yml \
+  --filename flush_pod.yml
