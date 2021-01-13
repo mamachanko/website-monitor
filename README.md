@@ -1,21 +1,19 @@
 ![tests](https://github.com/mamachanko/website-monitor/workflows/tests/badge.svg)
 
-# Website Monitor
+# `wm` - Website Monitor
 
 > A simple monitoring tool 🔭 to track response times and HTTP status for URLs using Kafka 🐞 and Postgres 🐘.
 
-It has three components:
+`wm` has three sub-commands:
 
-* 📞 Requesting a URL and publishing its HTTP status code, response time and a timestamp to a Kafka topic.
-* 📒 Consuming results from a Kafka topic and writing them to a Postgres instance.
-* 📊 Display of performance statistics for each URL with percentiles.
-
-Each component is available as an executable module of the `website_monitor` package:
+* `probe`: 📞 Requests a URL and publishes its HTTP status code, response time and a timestamp to a Kafka topic.
+* `flush`: 📒 Consumes results from a Kafka topic and writes them to a Postgres instance.
+* `stats`: 📊 Displays performance statistics for each URL with percentiles.
 
 ```shell
-python -m website_monitor.probe_and_publish
-python -m website_monitor.consume_and_write
-python -m website_monitor.show_stats
+pip install wm
+
+wm --help
 ```
 
 Tested with Python 3.9 and services hosted by [Aiven](https://aiven.io).
@@ -24,70 +22,53 @@ See open issues for outstanding todos.
 
 See [discussion](#Discussion) for notes on design decisions, areas of improvement and known issues.
 
-## Configuration
-
-The `website_monitor`'s components depend on environment variables namespaced within `WM_`:
-
-```
-WM_URL # the URL to be probed
-WM_DB_CONNECTION_STRING # PostgreSQL connection string for storing results e.g. 'postgres://username:password@12.34.56.67/my-database'
-WM_STREAM_BOOTSTRAP_SERVERS # one of the Kafka cluster's bootstrap servers and its port e.g. '12.34.56.78:1234'
-WM_STREAM_TOPIC # the Kafka topic to publish results to and consume from
-WM_STREAM_CONSUMER_GROUP_ID # the group id to read from and commit to the Kafka topic as
-WM_STREAM_SSL_CA_FILE # the path to the Kafka SSL CA file
-WM_STREAM_SSL_CERT_FILE # the path to the Kafka SSL certificate file
-WM_STREAM_SSL_KEY_FILE # the path to the Kafka SSL key file
-```
-
 ## Example
 
 ```shell
-source <(cat <<EOF
-WM_DB_CONNECTION_STRING="postgres://username:password@my-postgres:5432/website_monitor"
-WM_STREAM_TOPIC=website_monitor
-WM_STREAM_BOOTSTRAP_SERVERS=my-kafka:1234
-WM_STREAM_CONSUMER_GROUP_ID=website-monitor-consumers
-WM_STREAM_SSL_CA_FILE=kafka.pem
-WM_STREAM_SSL_CERT_FILE=kafka.cert
-WM_STREAM_SSL_KEY_FILE=kafka.key
-EOF
-)
-
-WM_URL=https://httpbin.org/delay/2 python -m website_monitor.probe_and_publish
-
 for i in {1..10}; do
-  WM_URL=https://httpbin.org/status/200 python -m website_monitor.probe_and_publish
+  wm probe \
+    "https://example.com" \
+     --bootstrap-server="my-kafka:1234" \
+     --topic="my-website-monitor" \
+     --ssl-cafile="my-kafka.pem" \
+     --ssl-certfile="my-kafka.cert" \
+     --ssl-keyfile="my-kafka.key"
+
   sleep 1;
 done
 
-python -m website_monitor.consume_and_write
+wm flush \
+  --db-connection-string="postgres:my-postgres:5432" \
+  --bootstrap-server="my-kafka:1234" \
+  --topic="my-website-monitor" \
+  --consumer-group-id="$WM_STREAM_CONSUMER_GROUP_ID" \
+  --ssl-cafile="my-kafka.pem" \
+  --ssl-certfile="my-kafka.cert" \
+  --ssl-keyfile="my-kafka.key"
+
+wm stats \
+  --db-connection-string="postgres:my-postgres:5432"
 ```
-Will produce results like this:
-```
-$ python -m website_monitor.show_stats
-
-results:
-
-- url: https://httpbin.org/delay/2
-  probes_total: 1
-  percentiles:
-    p50_ms: 2464.0
-    p50_ms: 2464.0
-    p95_ms: 2464.0
-
-- url: https://httpbin.org/status/200
-  probes_total: 10
-  percentiles:
-    p50_ms: 462.0
-    p50_ms: 2060.149999999998
-    p95_ms: 3348.0300000000016
+Will produce stats like this:
+```json
+{
+  "stats": [
+    {
+      "url": "https://example.com",
+      "probes": 10,
+      "p50_ms": 592.0,
+      "p95_ms": 832.0,
+      "p99_ms": 868.0
+    }
+  ]
+}
 
 ```
 
 ## Example deployment ☸️
 
 See `example-deployment/` for an example deployment to Kubernetes. It runs periodic probes of a URL in one pod and
-consumes the results from another.
+flushes the results from another.
 
 ## Discussion
 
@@ -99,9 +80,9 @@ Bash `for` or `while` loop. On the other hand it puts the burden on the deployme
 desired. However, platforms like Kubernetes have cron jobs. Alternatively, one could have implemented long-running
 processes.
 
-In hindsight, the CLI design turned out to be not ideal. A globally installed CLI that takes command line args and / or
-environment variables would be nicer. See this [issue](https://github.com/mamachanko/website-monitor/issues/2) for a
-possibly nicer design.
+~~In hindsight, the CLI design turned out to be not ideal. A globally installed CLI that takes command line args and / or
+environment variables would be nicer.~~ See this [issue](https://github.com/mamachanko/website-monitor/issues/2) which
+is currently worked on.
 
 The use of Kafka is naïve and possibly wasteful. This is to be blamed on my ignorance of Kafka and its patterns.
 
