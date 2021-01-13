@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name="website_monitor",
+    name="wm",
     version="0.1",
     py_modules=["website_monitor"],
     install_requires=[
