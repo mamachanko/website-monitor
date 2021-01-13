@@ -20,11 +20,11 @@ def run(*args):
 def assert_url_stats_match(url_stats: dict, probes: int, url: str):
     assert url_stats["url"] == url, url_stats
     assert url_stats["probes"] == probes, url_stats
-    assert 100 < url_stats["p50_ms"] < 2000, url_stats
+    assert 10 < url_stats["p50_ms"] < 2000, url_stats
     assert type(url_stats["p50_ms"]) == float, url_stats
-    assert 100 < url_stats["p95_ms"] < 2000, url_stats
+    assert 10 < url_stats["p95_ms"] < 2000, url_stats
     assert type(url_stats["p95_ms"]) == float, url_stats
-    assert 100 < url_stats["p99_ms"] < 2000, url_stats
+    assert 10 < url_stats["p99_ms"] < 2000, url_stats
     assert type(url_stats["p99_ms"]) == float, url_stats
 
 
