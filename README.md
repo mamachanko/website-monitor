@@ -1,5 +1,5 @@
 ![tests](https://github.com/mamachanko/website-monitor/workflows/tests/badge.svg)
-![Publish to PyPI](https://github.com/mamachanko/website-monitor/workflows/Publish%20to%20PyPI/badge.svg?event=release)
+![Publish to PyPI](https://github.com/mamachanko/website-monitor/workflows/Publish%20to%20PyPI/badge.svg?branch=v0.0.4)
 ![codeql](https://github.com/mamachanko/website-monitor/workflows/CodeQL/badge.svg)
 
 # `wm` - Website Monitor
