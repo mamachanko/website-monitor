@@ -126,3 +126,53 @@ class TestCLI:
         )
         assert result.exit_code != 0, result
         assert "Path 'this-file-does-not-exist' does not exist" in result.output, result
+
+    def test_probe_takes_options_from_env(self, stream_topic: StreamTopic):
+        result = CliRunner().invoke(
+            wm,
+            [
+                "probe",
+            ],
+            env={
+                "WM_URL": "https://httpbin.org/status/200",
+                "WM_STREAM_BOOTSTRAP_SERVER": stream_topic.bootstrap_servers,
+                "WM_STREAM_TOPIC": stream_topic.topic,
+                "WM_STREAM_SSL_CAFILE": stream_topic.ssl_cafile,
+                "WM_STREAM_SSL_CERTFILE": stream_topic.ssl_certfile,
+                "WM_STREAM_SSL_KEYFILE": stream_topic.ssl_keyfile,
+            },
+        )
+        assert result.exit_code == 0, result.exception
+
+    def test_flush_takes_options_from_env(
+        self, repository: Repository, stream_topic: StreamTopic
+    ):
+        result = CliRunner().invoke(
+            wm,
+            [
+                "flush",
+            ],
+            env={
+                "WM_DB_CONNECTION_STRING": repository.connection_string,
+                "WM_STREAM_BOOTSTRAP_SERVER": stream_topic.bootstrap_servers,
+                "WM_STREAM_TOPIC": stream_topic.topic,
+                "WM_STREAM_CONSUMER_GROUP_ID": env.require_env(
+                    "WM_STREAM_CONSUMER_GROUP_ID"
+                ),
+                "WM_STREAM_SSL_CAFILE": stream_topic.ssl_cafile,
+                "WM_STREAM_SSL_CERTFILE": stream_topic.ssl_certfile,
+                "WM_STREAM_SSL_KEYFILE": stream_topic.ssl_keyfile,
+            },
+        )
+        assert result.exit_code == 0, result.exception
+
+    def test_stats_takes_options_from_env(self, repository: Repository):
+        result = CliRunner().invoke(
+            wm,
+            [
+                "stats",
+            ],
+            env={"WM_DB_CONNECTION_STRING": repository.connection_string},
+        )
+        assert result.exit_code == 0, result.exception
+        assert json.loads(result.output) == json.loads('{"stats": []}')
