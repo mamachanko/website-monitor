@@ -45,7 +45,7 @@ class TestCLI:
             wm,
             [
                 "probe",
-                test_url_once,
+                f"--url={test_url_once}",
                 f"--bootstrap-server={stream_topic.bootstrap_servers}",
                 f"--topic={stream_topic.topic}",
                 f"--ssl-cafile={stream_topic.ssl_cafile}",
@@ -61,7 +61,7 @@ class TestCLI:
                 wm,
                 [
                     "probe",
-                    test_url_twice,
+                    f"--url={test_url_twice}",
                     f"--bootstrap-server={stream_topic.bootstrap_servers}",
                     f"--topic={stream_topic.topic}",
                     f"--ssl-cafile={stream_topic.ssl_cafile}",

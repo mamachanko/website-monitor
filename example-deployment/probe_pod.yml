@@ -15,7 +15,7 @@ spec:
         - |
           while true; do
             wm probe \
-             "$WM_URL" \
+              --url="$WM_URL" \
               --bootstrap-server="$WM_STREAM_BOOTSTRAP_SERVERS" \
               --topic="$WM_STREAM_TOPIC" \
               --ssl-cafile="$WM_STREAM_SSL_CA_FILE" \

@@ -13,7 +13,7 @@ def wm():
 
 
 @wm.command()
-@click.argument("url", type=click.STRING)
+@click.option("-u", "--url", type=click.STRING)
 @click.option("-b", "--bootstrap-server", type=click.STRING)
 @click.option("-t", "--topic", type=click.STRING)
 @click.option("-ca", "--ssl-cafile", type=click.Path(exists=True))

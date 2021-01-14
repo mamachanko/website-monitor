@@ -29,12 +29,12 @@ See [discussion](#Discussion) for notes on design decisions, areas of improvemen
 ```shell
 for i in {1..10}; do
   wm probe \
-    "https://example.com" \
-     --bootstrap-server="my-kafka:1234" \
-     --topic="my-website-monitor" \
-     --ssl-cafile="my-kafka.pem" \
-     --ssl-certfile="my-kafka.cert" \
-     --ssl-keyfile="my-kafka.key"
+    --url="https://example.com" \
+    --bootstrap-server="my-kafka:1234" \
+    --topic="my-website-monitor" \
+    --ssl-cafile="my-kafka.pem" \
+    --ssl-certfile="my-kafka.cert" \
+    --ssl-keyfile="my-kafka.key"
 
   sleep 1;
 done
