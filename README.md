@@ -82,10 +82,6 @@ Bash `for` or `while` loop. On the other hand it puts the burden on the deployme
 desired. However, platforms like Kubernetes have cron jobs. Alternatively, one could have implemented long-running
 processes.
 
-~~In hindsight, the CLI design turned out to be not ideal. A globally installed CLI that takes command line args and / or
-environment variables would be nicer.~~ See this [issue](https://github.com/mamachanko/website-monitor/issues/2) which
-is currently worked on.
-
 The use of Kafka is naïve and possibly wasteful. This is to be blamed on my ignorance of Kafka and its patterns.
 
 Every component blocks until it's done. While this makes for easy testing and CLI usage it might not make for the most
