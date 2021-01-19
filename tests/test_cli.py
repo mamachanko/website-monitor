@@ -3,6 +3,7 @@ import json
 import pytest
 from click.testing import CliRunner
 
+from tests.httpbin import Httpbin
 from website_monitor import env
 from website_monitor.cli import wm
 from website_monitor.repository import Repository
@@ -10,13 +11,14 @@ from website_monitor.streamtopic import StreamTopic
 
 
 def assert_url_stats_match(url_stats: dict, probes: int, url: str):
+    # TODO this is not great
     assert url_stats["url"] == url, url_stats
     assert url_stats["probes"] == probes, url_stats
-    assert 10 < url_stats["p50_ms"] < 2000, url_stats
+    assert 1 < url_stats["p50_ms"] < 2000, url_stats
     assert type(url_stats["p50_ms"]) == float, url_stats
-    assert 10 < url_stats["p95_ms"] < 2000, url_stats
+    assert 1 < url_stats["p95_ms"] < 2000, url_stats
     assert type(url_stats["p95_ms"]) == float, url_stats
-    assert 10 < url_stats["p99_ms"] < 2000, url_stats
+    assert 1 < url_stats["p99_ms"] < 2000, url_stats
     assert type(url_stats["p99_ms"]) == float, url_stats
 
 
@@ -33,10 +35,10 @@ class TestCLI:
         assert json.loads(result.output) == json.loads('{"stats": []}')
 
     def test_probes_get_published_and_flushed_and_accounted_for(
-        self, repository: Repository, stream_topic: StreamTopic
+        self, repository: Repository, stream_topic: StreamTopic, httpbin: Httpbin
     ):
-        test_url_once = "https://httpbin.org/status/201"
-        test_url_twice = "https://httpbin.org/status/200"
+        test_url_once = httpbin.get_url("/status/201")
+        test_url_twice = httpbin.get_url("/status/200")
 
         runner = CliRunner()
 
@@ -127,14 +129,14 @@ class TestCLI:
         assert result.exit_code != 0, result
         assert "Path 'this-file-does-not-exist' does not exist" in result.output, result
 
-    def test_probe_takes_options_from_env(self, stream_topic: StreamTopic):
+    def test_probe_takes_options_from_env(self, stream_topic: StreamTopic, httpbin: Httpbin):
         result = CliRunner().invoke(
             wm,
             [
                 "probe",
             ],
             env={
-                "WM_URL": "https://httpbin.org/status/200",
+                "WM_URL": httpbin.get_url("/status/200"),
                 "WM_STREAM_BOOTSTRAP_SERVER": stream_topic.bootstrap_servers,
                 "WM_STREAM_TOPIC": stream_topic.topic,
                 "WM_STREAM_SSL_CAFILE": stream_topic.ssl_cafile,
