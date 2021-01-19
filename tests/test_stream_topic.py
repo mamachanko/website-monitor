@@ -21,3 +21,17 @@ class TestStreamTopic:
         commit()
 
         assert records == []
+
+    def test_groups_are_isolated(self, stream_topic: StreamTopic):
+        stream_topic.exhaust(group_id="test group 1")
+        stream_topic.exhaust(group_id="test group 2")
+
+        stream_topic.publish("test message 1")
+        stream_topic.publish("test message 2")
+
+        (records_1, commit_1) = stream_topic.consume(group_id="test group 1")
+        commit_1()
+        (records_2, commit_2) = stream_topic.consume(group_id="test group 2")
+        commit_2()
+
+        assert records_1 == records_2 == ["test message 1", "test message 2"]
