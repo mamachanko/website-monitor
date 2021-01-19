@@ -129,9 +129,8 @@ def flush(
     )
     repository = Repository(db_connection_string)
 
-    records, commit = stream.consume(group_id=consumer_group_id)
-    repository.save(map(UrlProbe.from_json, records))
-    commit()
+    with stream.consume(group_id=consumer_group_id) as records:
+        repository.save(map(UrlProbe.from_json, records))
 
 
 @wm.command("stats")

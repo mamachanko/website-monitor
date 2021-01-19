@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import Tuple, Callable
 
 import kafka
@@ -36,7 +37,8 @@ class StreamTopic:
         producer.flush()
         producer.close()
 
-    def consume(self, group_id: str) -> Tuple[list[str], Callable[[], None]]:
+    @contextmanager
+    def consume(self, group_id: str) -> list[str]:
         """
         Consume messages using the given group_id.
 
@@ -59,15 +61,14 @@ class StreamTopic:
                 for raw_record in polled_records:
                     records.append(raw_record.value.decode("utf-8"))
 
-        def commit() -> None:
-            consumer.commit()
-            consumer.close()
+        yield records
 
-        return records, commit
+        consumer.commit()
+        consumer.close()
 
     def exhaust(self, group_id: str) -> None:
-        (_, commit) = self.consume(group_id)
-        commit()
+        with self.consume(group_id):
+            pass
 
     def _create_producer(self):
         return kafka.KafkaProducer(
