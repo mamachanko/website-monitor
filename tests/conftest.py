@@ -1,9 +1,16 @@
 import pytest
 from testcontainers.postgres import PostgresContainer
 
+from tests.httpbin import Httpbin
 from website_monitor import env
 from website_monitor.repository import Repository
 from website_monitor.streamtopic import StreamTopic
+
+
+@pytest.fixture(scope="session")
+def httpbin() -> Httpbin:
+    with Httpbin() as httpbin:
+        yield httpbin
 
 
 @pytest.fixture(scope="session")
