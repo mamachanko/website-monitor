@@ -88,16 +88,8 @@ Every component blocks until it's done. While this makes for easy testing and CL
 efficient and performant design. Every invocation opens and closes a connection to Postgres or Kafka. This is possibly
 wasteful.
 
-All configuration happens through environment variables. This is great for configuration of deployments, but it can be
-awkward to use as a CLI which purely depends on environment variables. It is particularly awkward to depend on
-environment variables which contain paths (see `WM_STREAM_SSL_CA_FILE`, `WM_STREAM_SSL_CERT_FILE`
-and `WM_STREAM_SSL_KEY_FILE`) as it coupling to the file system. Kubernetes' secrets allow to overcome the the issue by
-mounting secrets as file.
-
 The statistics list p50, p95 and p99 percentiles for response times per URL but do not factor in HTTP status code or
 temporal distribution.
-
-Logging is entirely absent.
 
 The database schema contains a single table. There are no indexes. It is not optimized for a particular query pattern.
 This is an area of improvement.
