@@ -3,23 +3,12 @@ import json
 import pytest
 from click.testing import CliRunner
 
+from tests.any import Any
 from tests.httpbin import Httpbin
 from website_monitor import env
 from website_monitor.cli import wm
 from website_monitor.repository import Repository
 from website_monitor.streamtopic import StreamTopic
-
-
-def assert_url_stats_match(url_stats: dict, probes: int, url: str):
-    # TODO this is not great
-    assert url_stats["url"] == url, url_stats
-    assert url_stats["probes"] == probes, url_stats
-    assert 1 < url_stats["p50_ms"] < 2000, url_stats
-    assert type(url_stats["p50_ms"]) == float, url_stats
-    assert 1 < url_stats["p95_ms"] < 2000, url_stats
-    assert type(url_stats["p95_ms"]) == float, url_stats
-    assert 1 < url_stats["p99_ms"] < 2000, url_stats
-    assert type(url_stats["p99_ms"]) == float, url_stats
 
 
 class TestCLI:
@@ -99,10 +88,21 @@ class TestCLI:
         )
         assert result.exit_code == 0, result.exception
         stats = json.loads(result.output)
-        assert len(stats["stats"]) == 2, stats
-        # This test is flaky.
-        assert_url_stats_match(stats["stats"][1], 1, test_url_once)
-        assert_url_stats_match(stats["stats"][0], 2, test_url_twice)
+        assert len(stats["stats"]) == 2
+        assert {
+            "url": test_url_once,
+            "probes": 1,
+            "p50_ms": Any(float),
+            "p95_ms": Any(float),
+            "p99_ms": Any(float),
+        } in stats["stats"]
+        assert {
+            "url": test_url_twice,
+            "probes": 2,
+            "p50_ms": Any(float),
+            "p95_ms": Any(float),
+            "p99_ms": Any(float),
+        } in stats["stats"]
 
     @pytest.mark.parametrize(
         "subcommand,ssl_file_option",
@@ -129,7 +129,9 @@ class TestCLI:
         assert result.exit_code != 0, result
         assert "Path 'this-file-does-not-exist' does not exist" in result.output, result
 
-    def test_probe_takes_options_from_env(self, stream_topic: StreamTopic, httpbin: Httpbin):
+    def test_probe_takes_options_from_env(
+        self, stream_topic: StreamTopic, httpbin: Httpbin
+    ):
         result = CliRunner().invoke(
             wm,
             [
