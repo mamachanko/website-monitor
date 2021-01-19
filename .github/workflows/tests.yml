@@ -43,19 +43,6 @@ jobs:
       shell: bash
       env:
         WM_STREAM_SSL_KEY: ${{ secrets.WM_STREAM_SSL_KEY }}
-    - name: debug env
-      env:
-        WM_STREAM_SSL_CA_FILE: ${{ runner.temp }}/stream.pem
-        WM_STREAM_SSL_CERT_FILE: ${{ runner.temp }}/stream.cert
-        WM_STREAM_SSL_KEY_FILE: ${{ runner.temp }}/stream.key
-      shell: bash
-      run: |
-        set +x
-        env | grep WM_
-        ls -lah
-        cat $WM_STREAM_SSL_CA_FILE
-        cat $WM_STREAM_SSL_CERT_FILE
-        cat $WM_STREAM_SSL_KEY_FILE
     - name: Test with pytest
       env:
         WM_DB_CONNECTION_STRING: ${{ secrets.WM_DB_CONNECTION_STRING }}
