@@ -1,13 +1,29 @@
 import pytest
+from testcontainers.postgres import PostgresContainer
 
 from website_monitor import env
 from website_monitor.repository import Repository
 from website_monitor.streamtopic import StreamTopic
 
 
+@pytest.fixture(scope="session")
+def db_connection_string() -> str:
+    with PostgresContainer("postgres:13.1-alpine") as postgres:
+        yield (
+            "{sqldialect}://{username}:{password}@{host}:{port}/{db}".format(
+                sqldialect="postgresql",
+                username=postgres.POSTGRES_USER,
+                password=postgres.POSTGRES_PASSWORD,
+                host=postgres.get_container_host_ip(),
+                port=postgres.get_exposed_port(postgres.port_to_expose),
+                db=postgres.POSTGRES_DB,
+            )
+        )
+
+
 @pytest.fixture
-def repository() -> Repository:
-    repository = Repository(env.require_env("WM_DB_CONNECTION_STRING"))
+def repository(db_connection_string) -> Repository:
+    repository = Repository(connection_string=db_connection_string)
     repository.setup()
     repository.delete_all()
     return repository
