@@ -139,6 +139,8 @@ def flush(
 
     with stream.consume(group_id=consumer_group_id) as records:
         repository.save(map(UrlProbe.from_json, records))
+        click.secho(f"flushed:\n", err=True, fg="yellow")
+        click.secho(json.dumps([json.loads(r) for r in records], indent=2), bold=True)
 
 
 @wm.command("stats")

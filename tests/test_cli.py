@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import pytest
 from click.testing import CliRunner
@@ -9,6 +10,7 @@ from website_monitor import env
 from website_monitor.cli import wm
 from website_monitor.repository import Repository
 from website_monitor.streamtopic import StreamTopic
+from website_monitor.url_probe import UrlProbe
 
 
 class TestCLI:
@@ -93,7 +95,43 @@ class TestCLI:
             "p99_ms": Any(float),
         } in stats["stats"]
 
-    def test_probe_outputs_result(self, stream_topic: StreamTopic, httpbin: Httpbin):
+    def test_probe_outputs_result(
+        self, repository: Repository, stream_topic: StreamTopic
+    ):
+
+        for _ in range(3):
+            url_probe = UrlProbe("test-url", datetime.min, 200, 500)
+            stream_topic.publish(url_probe.json)
+
+        runner = CliRunner(mix_stderr=False)
+
+        result = runner.invoke(
+            wm,
+            [
+                "flush",
+                f"--db-connection-string={repository.connection_string}",
+                f"--bootstrap-server={stream_topic.bootstrap_servers}",
+                f"--topic={stream_topic.topic}",
+                f"--consumer-group-id={env.require_env('WM_STREAM_CONSUMER_GROUP_ID')}",
+                f"--ssl-cafile={stream_topic.ssl_cafile}",
+                f"--ssl-certfile={stream_topic.ssl_certfile}",
+                f"--ssl-keyfile={stream_topic.ssl_keyfile}",
+            ],
+        )
+        assert result.exit_code == 0, result.exception
+        assert json.loads(result.stdout) == [
+            {
+                "url": "test-url",
+                "timestamp": str(datetime.min),
+                "http_status_code": 200,
+                "response_time_ms": 500,
+            }
+            for _ in range(3)
+        ]
+
+    def test_flush_outputs_written_results(
+        self, stream_topic: StreamTopic, httpbin: Httpbin
+    ):
         test_url = httpbin.get_url("/status/400")
 
         runner = CliRunner(mix_stderr=False)
