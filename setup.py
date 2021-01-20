@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="wm",
-    version="0.0.4",
+    version="0.0.5",
     py_modules=["website_monitor"],
     packages=find_packages(),
     include_package_data=True,
