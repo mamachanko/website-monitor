@@ -3,7 +3,7 @@ import json
 import pytest
 from click.testing import CliRunner
 
-from tests.any import Any
+from tests.any import Any, AnyTimestamp
 from tests.httpbin import Httpbin
 from website_monitor import env
 from website_monitor.cli import wm
@@ -12,17 +12,6 @@ from website_monitor.streamtopic import StreamTopic
 
 
 class TestCLI:
-    def test_no_stats_when_no_url_has_been_probed(self, repository):
-        result = CliRunner().invoke(
-            wm,
-            [
-                "stats",
-                f"--db-connection-string={repository.connection_string}",
-            ],
-        )
-        assert result.exit_code == 0, result.exception
-        assert json.loads(result.output) == json.loads('{"stats": []}')
-
     def test_probes_get_published_and_flushed_and_accounted_for(
         self, repository: Repository, stream_topic: StreamTopic, httpbin: Httpbin
     ):
@@ -103,6 +92,42 @@ class TestCLI:
             "p95_ms": Any(float),
             "p99_ms": Any(float),
         } in stats["stats"]
+
+    def test_probe_outputs_result(self, stream_topic: StreamTopic, httpbin: Httpbin):
+        test_url = httpbin.get_url("/status/400")
+
+        runner = CliRunner(mix_stderr=False)
+
+        result = runner.invoke(
+            wm,
+            [
+                "probe",
+                f"--url={test_url}",
+                f"--bootstrap-server={stream_topic.bootstrap_servers}",
+                f"--topic={stream_topic.topic}",
+                f"--ssl-cafile={stream_topic.ssl_cafile}",
+                f"--ssl-certfile={stream_topic.ssl_certfile}",
+                f"--ssl-keyfile={stream_topic.ssl_keyfile}",
+            ],
+        )
+        assert result.exit_code == 0, result.exception
+        assert json.loads(result.stdout) == {
+            "url": test_url,
+            "timestamp": AnyTimestamp(),
+            "http_status_code": 400,
+            "response_time_ms": Any(int),
+        }
+
+    def test_no_stats_when_no_url_has_been_probed(self, repository):
+        result = CliRunner().invoke(
+            wm,
+            [
+                "stats",
+                f"--db-connection-string={repository.connection_string}",
+            ],
+        )
+        assert result.exit_code == 0, result.exception
+        assert json.loads(result.output) == json.loads('{"stats": []}')
 
     @pytest.mark.parametrize(
         "subcommand,ssl_file_option",

@@ -61,8 +61,16 @@ def probe(
         ssl_keyfile=ssl_keyfile,
     )
 
+    click.secho(f"probing {url} ...\n", err=True, fg="yellow")
     url_probe = UrlProbe.probe(url)
+
+    pretty_probe_result = json.dumps(json.loads(url_probe.json), indent=2)
+    click.secho("result:", err=True, fg="yellow")
+    click.secho(pretty_probe_result, bold=True)
+    click.echo()
+
     stream.publish(message=url_probe.json)
+    click.secho(f"published result to topic '{topic}'.", err=True, fg="yellow")
 
 
 @wm.command()
