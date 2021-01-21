@@ -30,9 +30,6 @@ class TestCLI:
                 f"--url={test_url_once}",
                 f"--bootstrap-server={stream_topic.bootstrap_servers}",
                 f"--topic={stream_topic.topic}",
-                f"--ssl-cafile={stream_topic.ssl_cafile}",
-                f"--ssl-certfile={stream_topic.ssl_certfile}",
-                f"--ssl-keyfile={stream_topic.ssl_keyfile}",
             ],
         )
         assert result.exit_code == 0, result.exception
@@ -46,9 +43,6 @@ class TestCLI:
                     f"--url={test_url_twice}",
                     f"--bootstrap-server={stream_topic.bootstrap_servers}",
                     f"--topic={stream_topic.topic}",
-                    f"--ssl-cafile={stream_topic.ssl_cafile}",
-                    f"--ssl-certfile={stream_topic.ssl_certfile}",
-                    f"--ssl-keyfile={stream_topic.ssl_keyfile}",
                 ],
             )
             assert result.exit_code == 0, result.exception
@@ -61,10 +55,7 @@ class TestCLI:
                 f"--db-connection-string={repository.connection_string}",
                 f"--bootstrap-server={stream_topic.bootstrap_servers}",
                 f"--topic={stream_topic.topic}",
-                f"--consumer-group-id={env.require_env('WM_STREAM_CONSUMER_GROUP_ID')}",
-                f"--ssl-cafile={stream_topic.ssl_cafile}",
-                f"--ssl-certfile={stream_topic.ssl_certfile}",
-                f"--ssl-keyfile={stream_topic.ssl_keyfile}",
+                f"--consumer-group-id=test-consumer",
             ],
         )
         assert result.exit_code == 0, result.exception
@@ -112,10 +103,7 @@ class TestCLI:
                 f"--db-connection-string={repository.connection_string}",
                 f"--bootstrap-server={stream_topic.bootstrap_servers}",
                 f"--topic={stream_topic.topic}",
-                f"--consumer-group-id={env.require_env('WM_STREAM_CONSUMER_GROUP_ID')}",
-                f"--ssl-cafile={stream_topic.ssl_cafile}",
-                f"--ssl-certfile={stream_topic.ssl_certfile}",
-                f"--ssl-keyfile={stream_topic.ssl_keyfile}",
+                f"--consumer-group-id=test-consumer",
             ],
         )
         assert result.exit_code == 0, result.exception
@@ -143,9 +131,6 @@ class TestCLI:
                 f"--url={test_url}",
                 f"--bootstrap-server={stream_topic.bootstrap_servers}",
                 f"--topic={stream_topic.topic}",
-                f"--ssl-cafile={stream_topic.ssl_cafile}",
-                f"--ssl-certfile={stream_topic.ssl_certfile}",
-                f"--ssl-keyfile={stream_topic.ssl_keyfile}",
             ],
         )
         assert result.exit_code == 0, result.exception
@@ -223,9 +208,7 @@ class TestCLI:
                 "WM_DB_CONNECTION_STRING": repository.connection_string,
                 "WM_STREAM_BOOTSTRAP_SERVER": stream_topic.bootstrap_servers,
                 "WM_STREAM_TOPIC": stream_topic.topic,
-                "WM_STREAM_CONSUMER_GROUP_ID": env.require_env(
-                    "WM_STREAM_CONSUMER_GROUP_ID"
-                ),
+                "WM_STREAM_CONSUMER_GROUP_ID": "test-consumer",
                 "WM_STREAM_SSL_CAFILE": stream_topic.ssl_cafile,
                 "WM_STREAM_SSL_CERTFILE": stream_topic.ssl_certfile,
                 "WM_STREAM_SSL_KEYFILE": stream_topic.ssl_keyfile,

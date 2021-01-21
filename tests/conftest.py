@@ -1,8 +1,10 @@
+import uuid
+
 import pytest
 from testcontainers.postgres import PostgresContainer
 
 from tests.httpbin import Httpbin
-from website_monitor import env
+from tests.kafka import KafkaContainer
 from website_monitor.repository import Repository
 from website_monitor.streamtopic import StreamTopic
 
@@ -11,6 +13,12 @@ from website_monitor.streamtopic import StreamTopic
 def httpbin() -> Httpbin:
     with Httpbin() as httpbin:
         yield httpbin
+
+
+@pytest.fixture(scope="session")
+def kafka() -> KafkaContainer:
+    with KafkaContainer() as kafka:
+        yield kafka
 
 
 @pytest.fixture(scope="session")
@@ -29,7 +37,7 @@ def db_connection_string() -> str:
 
 
 @pytest.fixture
-def repository(db_connection_string) -> Repository:
+def repository(db_connection_string: str) -> Repository:
     repository = Repository(connection_string=db_connection_string)
     repository.setup()
     repository.delete_all()
@@ -37,13 +45,13 @@ def repository(db_connection_string) -> Repository:
 
 
 @pytest.fixture
-def stream_topic() -> StreamTopic:
-    stream_topic = StreamTopic(
-        topic=env.require_env("WM_STREAM_TOPIC"),
-        bootstrap_servers=env.require_env("WM_STREAM_BOOTSTRAP_SERVERS"),
-        ssl_cafile=env.require_env("WM_STREAM_SSL_CA_FILE"),
-        ssl_certfile=env.require_env("WM_STREAM_SSL_CERT_FILE"),
-        ssl_keyfile=env.require_env("WM_STREAM_SSL_KEY_FILE"),
+def topic() -> str:
+    return f"test-{uuid.uuid4()}"
+
+
+@pytest.fixture
+def stream_topic(kafka: KafkaContainer, topic: str) -> StreamTopic:
+    return StreamTopic(
+        topic=topic,
+        bootstrap_servers=kafka.get_bootstrap_server(),
     )
-    stream_topic.exhaust(group_id=env.require_env("WM_STREAM_CONSUMER_GROUP_ID"))
-    return stream_topic

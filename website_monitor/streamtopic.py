@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from typing import Tuple, Callable
 
 import kafka
 
@@ -9,8 +8,6 @@ class StreamTopic:
     Represents a Kafka stream topic which messages can be published to and consumed from.
     """
 
-    _security_protocol = "SSL"
-
     # An attempt to resolve the frequent NoBrokersAvailable exception.
     # https://github.com/dpkp/kafka-python/issues/1308
     _api_version = (2,)
@@ -19,12 +16,14 @@ class StreamTopic:
         self,
         bootstrap_servers: str,
         topic: str,
-        ssl_cafile: str,
-        ssl_certfile: str,
-        ssl_keyfile: str,
+        ssl: bool = False,
+        ssl_cafile: str = None,
+        ssl_certfile: str = None,
+        ssl_keyfile: str = None,
     ) -> None:
         self.bootstrap_servers = bootstrap_servers
         self.topic = topic
+        self.ssl = ssl
         self.ssl_certfile = ssl_certfile
         self.ssl_cafile = ssl_cafile
         self.ssl_keyfile = ssl_keyfile
@@ -66,14 +65,11 @@ class StreamTopic:
         consumer.commit()
         consumer.close()
 
-    def exhaust(self, group_id: str) -> None:
-        with self.consume(group_id):
-            pass
-
     def _create_producer(self):
         return kafka.KafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
-            security_protocol=self._security_protocol,
+            api_version=self._api_version,
+            security_protocol="SSL" if self.ssl else "PLAINTEXT",
             ssl_cafile=self.ssl_cafile,
             ssl_certfile=self.ssl_certfile,
             ssl_keyfile=self.ssl_keyfile,
@@ -84,11 +80,11 @@ class StreamTopic:
             self.topic,
             group_id=group_id,
             bootstrap_servers=self.bootstrap_servers,
-            security_protocol="SSL",
+            api_version=self._api_version,
+            security_protocol="SSL" if self.ssl else "PLAINTEXT",
             ssl_cafile=self.ssl_cafile,
             ssl_certfile=self.ssl_certfile,
             ssl_keyfile=self.ssl_keyfile,
-            api_version=self._api_version,
             auto_offset_reset="earliest",
             enable_auto_commit=False,
         )
