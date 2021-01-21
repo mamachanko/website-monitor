@@ -32,6 +32,7 @@ for i in {1..10}; do
     --url="https://example.com" \
     --bootstrap-server="my-kafka:1234" \
     --topic="my-website-monitor" \
+    --ssl \
     --ssl-cafile="my-kafka.pem" \
     --ssl-certfile="my-kafka.cert" \
     --ssl-keyfile="my-kafka.key"
@@ -44,6 +45,7 @@ wm flush \
   --bootstrap-server="my-kafka:1234" \
   --topic="my-website-monitor" \
   --consumer-group-id="$WM_STREAM_CONSUMER_GROUP_ID" \
+  --ssl \
   --ssl-cafile="my-kafka.pem" \
   --ssl-certfile="my-kafka.cert" \
   --ssl-keyfile="my-kafka.key"
