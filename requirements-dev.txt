@@ -1,5 +1,5 @@
 pytest==6.2.1
-aiven-client==2.9.0
+aiven-client==2.14.1
 black==20.8b1
 testcontainers[postgresql]==3.2.0
 flake8==3.8.4
