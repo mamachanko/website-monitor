@@ -10,7 +10,7 @@ setup(
         "kafka-python==2.0.2",
         "psycopg2==2.9.5",
         "requests==2.25.1",
-        "click==7.1.2",
+        "click==8.1.3",
     ],
     entry_points="""
         [console_scripts]
