@@ -9,7 +9,7 @@ setup(
     install_requires=[
         "kafka-python==2.0.2",
         "psycopg2==2.9.5",
-        "requests==2.25.1",
+        "requests==2.28.1",
         "click==7.1.2",
     ],
     entry_points="""
